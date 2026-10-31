@@ -2,7 +2,7 @@ import pandas as pd
 import joblib
 import os
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(_file_))
 
 # ==========================================
 # 1. LOAD MODEL AND SCALER ARTIFACTS
@@ -31,10 +31,7 @@ def preprocess_input(input_dict):
         'income_lakhs': input_dict.get('Income in Lakhs', 0),
         'insurance_plan': {'Bronze': 1, 'Silver': 2, 'Gold': 3}.get(input_dict.get('Insurance Plan'), 0),
         'normalized_risk_score': calculate_normalized_risk(input_dict.get('Medical History', '')),
-        
-        # 🚨 NEW: Pull the actual slider value instead of hardcoding 0
         'genetical_risk': input_dict.get('Genetical Risk', 0), 
-        
         'gender_Male': 1 if input_dict.get('Gender') == 'Male' else 0,
         'region_Northwest': 1 if input_dict.get('Region') == 'Northwest' else 0,
         'region_Southeast': 1 if input_dict.get('Region') == 'Southeast' else 0,

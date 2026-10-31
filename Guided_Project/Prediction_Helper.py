@@ -19,29 +19,19 @@ scaler_rest_data = joblib.load(os.path.join(BASE_DIR, "Artifacts", "scaler_rest.
 def calculate_normalized_risk(medical_history):
     if not isinstance(medical_history, str):
         return 0.0
-        
-    risk_scores = {
-        "diabetes": 6, "heart disease": 8, "high blood pressure": 6,
-        "thyroid": 5, "no disease": 0, "none": 0
-    }
-    
+    risk_scores = {"diabetes": 6, "heart disease": 8, "high blood pressure": 6, "thyroid": 5, "no disease": 0, "none": 0}
     diseases = medical_history.lower().split(" & ")
     total_risk_score = sum(risk_scores.get(disease.strip(), 0) for disease in diseases)
-    
-    max_score = 14 
-    min_score = 0  
-    
-    return (total_risk_score - min_score) / (max_score - min_score)
+    return (total_risk_score - 0) / (14 - 0)
 
 def preprocess_input(input_dict):
-    # These are the EXACT columns your XGBoost model was trained on
     features = {
         'age': input_dict.get('Age', 0),
         'number_of_dependants': input_dict.get('Number of Dependants', 0),
         'income_lakhs': input_dict.get('Income in Lakhs', 0),
         'insurance_plan': {'Bronze': 1, 'Silver': 2, 'Gold': 3}.get(input_dict.get('Insurance Plan'), 0),
         'normalized_risk_score': calculate_normalized_risk(input_dict.get('Medical History', '')),
-        
+        'genetical_risk': 0, 
         'gender_Male': 1 if input_dict.get('Gender') == 'Male' else 0,
         'region_Northwest': 1 if input_dict.get('Region') == 'Northwest' else 0,
         'region_Southeast': 1 if input_dict.get('Region') == 'Southeast' else 0,
@@ -58,15 +48,9 @@ def preprocess_input(input_dict):
     return pd.DataFrame([features])
 
 def handle_scaling(age, df):
-    if age <= 25:
-        scaler_object = scaler_young_data
-    else:
-        scaler_object = scaler_rest_data
-
+    scaler_object = scaler_young_data if age <= 25 else scaler_rest_data
     cols_to_scale = scaler_object['cols_to_scale']
     scaler = scaler_object['scaler']
-
-    # Apply scaling ONLY to the columns the scaler was trained on
     df[cols_to_scale] = scaler.transform(df[cols_to_scale])
     return df
 
@@ -82,11 +66,5 @@ def predict(input_dict):
     else:
         prediction = model_rest.predict(input_df)
 
-    final_val = int(prediction[0])
-    
-    # SAFETY NET: If it still predicts below 1000 due to extreme edge cases, set to 1000.
-    # A health insurance premium will never be lower than this.
-    if final_val < 1000:
-        final_val = 1000
-
-    return final_val
+    # NO SAFETY NETS. This is the exact model prediction.
+    return int(prediction[0])

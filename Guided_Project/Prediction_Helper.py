@@ -129,4 +129,12 @@ def predict(input_dict):
     else:
         prediction = model_rest.predict(input_df)
 
-    return int(prediction[0])
+    # Get the raw prediction value
+    final_prediction = int(prediction[0])
+    
+    # ML models can sometimes predict negative numbers for low-risk profiles. 
+    # This ensures the app never shows a negative premium.
+    if final_prediction < 0:
+        final_prediction = 0
+
+    return final_prediction

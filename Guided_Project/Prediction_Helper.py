@@ -2,8 +2,7 @@ import pandas as pd
 import joblib
 import os
 
-# Get the directory where this script is located
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(_file_))
 
 # ==========================================
 # 1. LOAD MODEL AND SCALER ARTIFACTS
@@ -22,12 +21,8 @@ def calculate_normalized_risk(medical_history):
         return 0.0
         
     risk_scores = {
-        "diabetes": 6,
-        "heart disease": 8,
-        "high blood pressure": 6,
-        "thyroid": 5,
-        "no disease": 0,
-        "none": 0
+        "diabetes": 6, "heart disease": 8, "high blood pressure": 6,
+        "thyroid": 5, "no disease": 0, "none": 0
     }
     
     diseases = medical_history.lower().split(" & ")
@@ -36,67 +31,31 @@ def calculate_normalized_risk(medical_history):
     max_score = 14 
     min_score = 0  
     
-    normalized_risk_score = (total_risk_score - min_score) / (max_score - min_score)
-    return normalized_risk_score
-
+    return (total_risk_score - min_score) / (max_score - min_score)
 
 def preprocess_input(input_dict):
-    expected_cols = [
-        'age', 'number_of_dependants', 'income_lakhs', 'insurance_plan', 
-        'genetical_risk', 'normalized_risk_score', 'gender_Male', 
-        'region_Northwest', 'region_Southeast', 'region_Southwest', 
-        'marital_status_Unmarried', 'bmi_category_Obesity', 
-        'bmi_category_Overweight', 'bmi_category_Underweight', 
-        'smoking_status_Occasional', 'smoking_status_Regular', 
-        'employment_status_Salaried', 'employment_status_Self-Employed'
-    ]
-
-    insurance_plan_encoding = {'Bronze': 1, 'Silver': 2, 'Gold': 3}
-    features = {col: 0 for col in expected_cols}
-
-    if input_dict.get('Gender') == 'Male':
-        features['gender_Male'] = 1
+    # These are the EXACT columns your XGBoost model was trained on
+    features = {
+        'age': input_dict.get('Age', 0),
+        'number_of_dependants': input_dict.get('Number of Dependants', 0),
+        'income_lakhs': input_dict.get('Income in Lakhs', 0),
+        'insurance_plan': {'Bronze': 1, 'Silver': 2, 'Gold': 3}.get(input_dict.get('Insurance Plan'), 0),
+        'normalized_risk_score': calculate_normalized_risk(input_dict.get('Medical History', '')),
         
-    region = input_dict.get('Region')
-    if region == 'Northwest':
-        features['region_Northwest'] = 1
-    elif region == 'Southeast':
-        features['region_Southeast'] = 1
-    elif region == 'Southwest':
-        features['region_Southwest'] = 1
-        
-    if input_dict.get('Marital Status') == 'Unmarried':
-        features['marital_status_Unmarried'] = 1
-        
-    bmi = input_dict.get('BMI Category')
-    if bmi == 'Obesity':
-        features['bmi_category_Obesity'] = 1
-    elif bmi == 'Overweight':
-        features['bmi_category_Overweight'] = 1
-    elif bmi == 'Underweight':
-        features['bmi_category_Underweight'] = 1
-        
-    smoking = input_dict.get('Smoking Status')
-    if smoking == 'Regular':
-        features['smoking_status_Regular'] = 1
-    elif smoking == 'Occasional':
-        features['smoking_status_Occasional'] = 1
-        
-    employment = input_dict.get('Employment Status')
-    if employment == 'Salaried':
-        features['employment_status_Salaried'] = 1
-    elif employment == 'Self-Employed':
-        features['employment_status_Self-Employed'] = 1
-
-    features['age'] = input_dict.get('Age', 0)
-    features['number_of_dependants'] = input_dict.get('Number of Dependants', 0)
-    features['income_lakhs'] = input_dict.get('Income in Lakhs', 0) 
-    features['insurance_plan'] = insurance_plan_encoding.get(input_dict.get('Insurance Plan'), 0)
-    features['genetical_risk'] = input_dict.get('Genetical Risk', 0)
-    features['normalized_risk_score'] = calculate_normalized_risk(input_dict.get('Medical History', ''))
-
+        'gender_Male': 1 if input_dict.get('Gender') == 'Male' else 0,
+        'region_Northwest': 1 if input_dict.get('Region') == 'Northwest' else 0,
+        'region_Southeast': 1 if input_dict.get('Region') == 'Southeast' else 0,
+        'region_Southwest': 1 if input_dict.get('Region') == 'Southwest' else 0,
+        'marital_status_Unmarried': 1 if input_dict.get('Marital Status') == 'Unmarried' else 0,
+        'bmi_category_Obesity': 1 if input_dict.get('BMI Category') == 'Obesity' else 0,
+        'bmi_category_Overweight': 1 if input_dict.get('BMI Category') == 'Overweight' else 0,
+        'bmi_category_Underweight': 1 if input_dict.get('BMI Category') == 'Underweight' else 0,
+        'smoking_status_Occasional': 1 if input_dict.get('Smoking Status') == 'Occasional' else 0,
+        'smoking_status_Regular': 1 if input_dict.get('Smoking Status') == 'Regular' else 0,
+        'employment_status_Salaried': 1 if input_dict.get('Employment Status') == 'Salaried' else 0,
+        'employment_status_Self-Employed': 1 if input_dict.get('Employment Status') == 'Self-Employed' else 0,
+    }
     return pd.DataFrame([features])
-
 
 def handle_scaling(age, df):
     if age <= 25:
@@ -107,12 +66,9 @@ def handle_scaling(age, df):
     cols_to_scale = scaler_object['cols_to_scale']
     scaler = scaler_object['scaler']
 
-    df['income_level'] = None 
+    # Apply scaling ONLY to the columns the scaler was trained on
     df[cols_to_scale] = scaler.transform(df[cols_to_scale])
-    df.drop('income_level', axis='columns', inplace=True)
-
     return df
-
 
 # ==========================================
 # 3. MAIN PREDICTION FUNCTION
@@ -122,18 +78,15 @@ def predict(input_dict):
     input_df = handle_scaling(input_dict['Age'], input_df)
 
     if input_dict['Age'] <= 25:
-        if 'genetical_risk' in input_df.columns:
-            input_df = input_df.drop(columns=['genetical_risk'])
         prediction = model_young.predict(input_df)
     else:
         prediction = model_rest.predict(input_df)
 
-    # Get the raw prediction value
-    final_prediction = int(prediction[0])
+    final_val = int(prediction[0])
     
-    # --- THE FIX ---
-    # If the model predicts a negative number, force it to be 0.
-    if final_prediction < 0:
-        final_prediction = 0
+    # SAFETY NET: If it still predicts below 1000 due to extreme edge cases, set to 1000.
+    # A health insurance premium will never be lower than this.
+    if final_val < 1000:
+        final_val = 1000
 
-    return final_prediction
+    return final_val

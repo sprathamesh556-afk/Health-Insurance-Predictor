@@ -1,4 +1,3 @@
-# VERSION 2.0 - FIXED NEGATIVE VALUES
 import streamlit as st
 from Prediction_Helper import predict
 
@@ -87,10 +86,6 @@ with st.form(key='insurance_form'):
     with col11:
         number_of_dependants = st.number_input('Number of Dependants', min_value=0, step=1, max_value=20, value=0)
 
-    with st.expander("⚙️ Advanced Options"):
-        genetical_risk = st.slider('Genetical Risk Score', min_value=0, max_value=5, value=1, 
-                                   help="A higher score indicates a higher genetic predisposition to diseases.")
-
     submit_button = st.form_submit_button(label='Calculate Estimated Premium')
 
 # ==========================================
@@ -101,7 +96,6 @@ if submit_button:
         'Age': age,
         'Number of Dependants': number_of_dependants,
         'Income in Lakhs': income_lakhs,
-        'Genetical Risk': genetical_risk,
         'Insurance Plan': insurance_plan,
         'Employment Status': employment_status,
         'Gender': gender,

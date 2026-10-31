@@ -8,7 +8,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # ==========================================
 # 1. LOAD MODEL AND SCALER ARTIFACTS
 # ==========================================
-# Using os.path.join makes it work perfectly on both Windows and Linux (Streamlit)
 model_young = joblib.load(os.path.join(BASE_DIR, "Artifacts", "model_young.joblib"))
 model_rest = joblib.load(os.path.join(BASE_DIR, "Artifacts", "model_rest.joblib"))
 
@@ -132,8 +131,8 @@ def predict(input_dict):
     # Get the raw prediction value
     final_prediction = int(prediction[0])
     
-    # ML models can sometimes predict negative numbers for low-risk profiles. 
-    # This ensures the app never shows a negative premium.
+    # --- THE FIX ---
+    # If the model predicts a negative number, force it to be 0.
     if final_prediction < 0:
         final_prediction = 0
 

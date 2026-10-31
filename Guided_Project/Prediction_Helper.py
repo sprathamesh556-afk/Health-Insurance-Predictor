@@ -3,7 +3,7 @@ import joblib
 import os
 
 # Get the directory where this script is located
-BASE_DIR = os.path.dirname(os.path.abspath(_file_))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ==========================================
 # 1. LOAD MODEL AND SCALER ARTIFACTS

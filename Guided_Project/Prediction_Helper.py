@@ -31,7 +31,10 @@ def preprocess_input(input_dict):
         'income_lakhs': input_dict.get('Income in Lakhs', 0),
         'insurance_plan': {'Bronze': 1, 'Silver': 2, 'Gold': 3}.get(input_dict.get('Insurance Plan'), 0),
         'normalized_risk_score': calculate_normalized_risk(input_dict.get('Medical History', '')),
-        'genetical_risk': 0, 
+        
+        # 🚨 NEW: Pull the actual slider value instead of hardcoding 0
+        'genetical_risk': input_dict.get('Genetical Risk', 0), 
+        
         'gender_Male': 1 if input_dict.get('Gender') == 'Male' else 0,
         'region_Northwest': 1 if input_dict.get('Region') == 'Northwest' else 0,
         'region_Southeast': 1 if input_dict.get('Region') == 'Southeast' else 0,
@@ -66,5 +69,4 @@ def predict(input_dict):
     else:
         prediction = model_rest.predict(input_df)
 
-    # NO SAFETY NETS. This is the exact model prediction.
     return int(prediction[0])

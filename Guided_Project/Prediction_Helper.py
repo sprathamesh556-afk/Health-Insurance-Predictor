@@ -2,7 +2,7 @@ import pandas as pd
 import joblib
 import os
 
-BASE_DIR = os.path.dirname(os.path.abspath(_file_))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ==========================================
 # 1. LOAD MODEL AND SCALER ARTIFACTS

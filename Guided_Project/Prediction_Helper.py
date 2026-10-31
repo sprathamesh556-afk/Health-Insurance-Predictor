@@ -1,16 +1,19 @@
 import pandas as pd
 import joblib
+import os
+
+# Get the directory where this script is located
+BASE_DIR = os.path.dirname(os.path.abspath(_file_))
 
 # ==========================================
 # 1. LOAD MODEL AND SCALER ARTIFACTS
 # ==========================================
-# Make sure these file paths match where your .joblib files are saved
-model_young = joblib.load("artifacts/model_young.joblib")
-model_rest = joblib.load("artifacts/model_rest.joblib")
+# Using os.path.join makes it work perfectly on both Windows and Linux (Streamlit)
+model_young = joblib.load(os.path.join(BASE_DIR, "Artifacts", "model_young.joblib"))
+model_rest = joblib.load(os.path.join(BASE_DIR, "Artifacts", "model_rest.joblib"))
 
-scaler_young_data = joblib.load("artifacts/scaler_young.joblib")
-scaler_rest_data = joblib.load("artifacts/scaler_rest.joblib")
-
+scaler_young_data = joblib.load(os.path.join(BASE_DIR, "Artifacts", "scaler_young.joblib"))
+scaler_rest_data = joblib.load(os.path.join(BASE_DIR, "Artifacts", "scaler_rest.joblib"))
 
 # ==========================================
 # 2. HELPER FUNCTIONS
@@ -39,7 +42,6 @@ def calculate_normalized_risk(medical_history):
 
 
 def preprocess_input(input_dict):
-    # The exact columns the models expect
     expected_cols = [
         'age', 'number_of_dependants', 'income_lakhs', 'insurance_plan', 
         'genetical_risk', 'normalized_risk_score', 'gender_Male', 
@@ -51,11 +53,8 @@ def preprocess_input(input_dict):
     ]
 
     insurance_plan_encoding = {'Bronze': 1, 'Silver': 2, 'Gold': 3}
-
-    # Initialize all features to 0
     features = {col: 0 for col in expected_cols}
 
-    # Set categorical features to 1 based on input
     if input_dict.get('Gender') == 'Male':
         features['gender_Male'] = 1
         
@@ -90,7 +89,6 @@ def preprocess_input(input_dict):
     elif employment == 'Self-Employed':
         features['employment_status_Self-Employed'] = 1
 
-    # Handle numerical features
     features['age'] = input_dict.get('Age', 0)
     features['number_of_dependants'] = input_dict.get('Number of Dependants', 0)
     features['income_lakhs'] = input_dict.get('Income in Lakhs', 0) 
@@ -110,7 +108,6 @@ def handle_scaling(age, df):
     cols_to_scale = scaler_object['cols_to_scale']
     scaler = scaler_object['scaler']
 
-    # Create dummy column if scaler expects it
     df['income_level'] = None 
     df[cols_to_scale] = scaler.transform(df[cols_to_scale])
     df.drop('income_level', axis='columns', inplace=True)
@@ -119,20 +116,17 @@ def handle_scaling(age, df):
 
 
 # ==========================================
-# 3. MAIN PREDICTION FUNCTION (FIXED)
+# 3. MAIN PREDICTION FUNCTION
 # ==========================================
 def predict(input_dict):
     input_df = preprocess_input(input_dict)
     input_df = handle_scaling(input_dict['Age'], input_df)
 
-    # Route based on age
     if input_dict['Age'] <= 25:
-        # The young model was trained WITHOUT genetical_risk. Drop it here.
         if 'genetical_risk' in input_df.columns:
             input_df = input_df.drop(columns=['genetical_risk'])
         prediction = model_young.predict(input_df)
     else:
-        # The rest model was trained WITH genetical_risk. Keep it.
         prediction = model_rest.predict(input_df)
 
     return int(prediction[0])

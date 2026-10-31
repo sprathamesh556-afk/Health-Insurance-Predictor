@@ -1,4 +1,4 @@
-venv/
+My_Env/
 _pycache_/
 *.xlsx
 *.ipynb
